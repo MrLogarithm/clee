@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clee"
+version = "0.0.1"
+authors = [
+  { name="Logan Born", email="loborn@sfu.ca" },
+]
+description = "CommandLine Environment for Elamite"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "sqlite3",
+    "textwrap",
+    "fuzzywuzzy",
+    "pyautogui"
+]
