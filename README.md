@@ -2,7 +2,7 @@
 
 Clone this directory and install with `pip`:
 ```bash
-$ git clone ....
+$ git clone https://github.com/MrLogarithm/clee.git
 $ cd clee
 $ pip install -e .
 ```
