@@ -15,7 +15,6 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "sqlite3",
     "textwrap",
     "fuzzywuzzy",
     "pyautogui"
