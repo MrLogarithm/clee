@@ -34,6 +34,8 @@ canonical_uids = cursor.fetchall()
 # but maintain the original casing for DB access:
 canonical_uids = {uid.upper(): uid for (uid,) in canonical_uids}
 
+hide_uid_col = True
+
 def is_uid(string):
     """
     Returns the canonical form of a UID, or False.
@@ -239,6 +241,9 @@ def prettyprint_tablet(uid, head=None):
     for entry, system, value in cursor.fetchall():
         values[entry][system[4:]] = value
 
+    cursor.execute("SELECT DISTINCT UID FROM ObjectAttributeValue WHERE UID LIKE ?||'%' AND Attribute = 'span_type' AND Value = 'HEADER'",(uid,))
+    headers = set(h[7:] for (h,) in cursor.fetchall())
+    
     n_lines = max(int(uid_.split(":")[1]) for uid_ in ancestors.keys() if ":" in uid_)
     lines = []
     for n in range(n_lines+1):
@@ -281,29 +286,35 @@ def prettyprint_tablet(uid, head=None):
                 lines[-1][2].append(f"{tok+end}")
         # print numeral value(s)
         if num_id:
-            for system, value in values[num_id].items():
+            n_vals = len(values[num_id])
+            for value_line, (system, value) in enumerate(sorted(values[num_id].items())):
                 value = float(value)
-                value = re.sub('\.00', '   ', '{:>5.2f}'.format(round(value,2)))
-                lines[-1][3].append(f"= {value} xN01 ({system.replace(',','')}) ")
+                value = re.sub('\.00', '   ', '{:>6.2f}'.format(round(value,2)))
+                if value_line > 0:
+                    lines.append([[],[],[],[]])
+                #lines[-1][3].append(f"{r'─' if value_line == 0 and n_vals == 1 else '┬' if value_line == 0 and n_vals > 1 else '├' if value_line < n_vals-1 else '└'} {value} xN01 ({system.replace(',','')}) ")
+                lines[-1][3].append(f"{'=' if value_line == 0 else ' '} {value} xN01 ({system.replace(',','')}){',' if value_line < n_vals-1 else ' '}")
+    #print(any(h.strip() in headers for h in lines[0][0]))
     if lines != []:
         lines = [[[]]+l[1:]+l[:1] for l in lines]
+        # TODO if HMM header, also label the later rows
+        lines = [l[:1]+['H ' if any(h.strip() in headers for h in l[-1]) else ' ']+l[1:] for l in lines]
         lines = [[''.join(col) for col in l] for l in lines]
-        lines = [['', 'TEXT ', 'NUMERAL ', 'VALUE(S)', F'{"SEGMENT":9}{"ENTRY":9}{"TEXT":9}{"NUMERAL":9}']] + lines + [['','','','','']]
+        lines = [['', '  ', 'TEXT ', 'NUMERAL ', 'VALUE(S)', F'{"SEGMENT":9}{"ENTRY":9}{"TEXT":9}{"NUMERAL":9}']] + lines
         if head:
             lines = lines[:head+1]
         col_widths = [max(len(l[i]) for l in lines) for i in range(len(lines[0]))]
-        if sum(col_widths[:-1]) > 80:
-            lines = [l[:-1]+[''.join(re.findall(':[0-9]+', ''.join(l[-1]))[:1])] for l in lines]
-            col_widths[-1] = 4
-            lines[0][-1] = 'LINE'
+        if hide_uid_col or sum(col_widths[:-1]) > 70:
+            lines = [l[:-1]+[''.join(re.findall(':[0-9]+', ''.join(l[-1]))[-1:])] for l in lines]
+            col_widths[-1] = 5
+            lines[0][-1] = 'LINE '
         for line_no, l in enumerate(lines):
             if line_no == 0:
-                print(" \033[4;1m", end='')
                 for i in range(len(lines[0])):
-                    print("{:>{w}}".format('',w=col_widths[i]), end=' ')
-                print('  ')
-            elif line_no == len(lines)-1:
-                print("\033[4m", end='')
+                    if i == 0:
+                        print("\033[1m┌", end='')
+                    else:
+                        print("─"*(col_widths[i]+1), end='┬' if i < len(lines[0])-1 else "┐\n")
             for i in range(len(lines[0])):
                 # Right-align the text column, so
                 # that counted objects are lined up
@@ -314,8 +325,20 @@ def prettyprint_tablet(uid, head=None):
                 print(fmt.format(l[i],w=col_widths[i]), end='│')
                 if i < len(l)-1:
                     print(' ', end='')
-            if line_no == 0 or line_no == len(lines)-1:
-                print("\033[0m",end='')
+            if line_no == 0:
+                for i in range(len(lines[0])):
+                    if i == 0:
+                        print("\n├", end='')
+                    else:
+                        print("─"*(col_widths[i]+1), end='┼' if i < len(lines[0])-1 else "┤\033[0m")
+            if line_no == len(lines)-1:
+                for i in range(len(lines[0])):
+                    if i == 0:
+                        print("\n└", end='')
+                    else:
+                        print("─"*(col_widths[i]+1), end='┴' if i < len(lines[0])-1 else "┘")
+            #if line_no == 0 or line_no == len(lines)-1:
+                #print("\033[0m",end='')
             print()
 
 def get_attrs(uid):
