@@ -235,11 +235,11 @@ def prettyprint_tablet(uid, head=None):
     cursor.execute("""
     SELECT * 
     FROM ObjectAttributeValue 
-    WHERE Attribute LIKE 'val_%' AND UID IN ({})
+    WHERE Attribute LIKE 'disambig_%' AND UID IN ({})
     """.format(', '.join(f"'{u}'" for u in all_uids if ':num' in u)))
     values = defaultdict(dict)
     for entry, system, value in cursor.fetchall():
-        values[entry][system[4:]] = value
+        values[entry][system[9:]] = value
 
     cursor.execute("SELECT DISTINCT UID FROM ObjectAttributeValue WHERE UID LIKE ?||'%' AND Attribute = 'span_type' AND Value = 'HEADER'",(uid,))
     headers = set(h[7:] for (h,) in cursor.fetchall())
