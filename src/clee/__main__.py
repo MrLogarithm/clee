@@ -161,7 +161,10 @@ class CLEE(cmd.Cmd):
                 else:
                     texts = get_texts_by_cg(left_id, middle_id)
             else:
-                (sign_id, base_name) = cursor.execute("SELECT SignID, BaseName from Signlist WHERE DahlName = ?", (sign,)).fetchone()
+                try:
+                    (sign_id, base_name) = cursor.execute("SELECT SignID, BaseName from Signlist WHERE DahlName = ?", (sign,)).fetchone()
+                except:
+                    sign_id = None
                 if sign_id:
                     texts = get_texts_by_sign(sign_id)
                 else:
