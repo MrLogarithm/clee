@@ -166,15 +166,31 @@ class CLEE(cmd.Cmd):
                     texts = get_texts_by_sign(sign_id)
                 else:
                     return
-            for uid, _ in texts:
-                # Monkeypatch print to highlight strings
-                # matching the given pattern
-                import builtins
-                def grep_print(*args, **kwargs):
-                    real_print(*[re.sub(f'({re.escape(sign)})', r'\033[31;1m\1\033[0m', a) for a in args], **kwargs)
-                builtins.print = grep_print
+            list_idx = 0
+            # Monkeypatch print to highlight strings
+            # matching the given pattern
+            import builtins
+            def grep_print(*args, **kwargs):
+                real_print(*[re.sub(f'({re.escape(sign)})', r'\033[31;1m\1\033[0m', a) for a in args], **kwargs)
+            builtins.print = grep_print
+            while 0 <= list_idx < len(texts):
+                uid, _ = texts[list_idx]
                 self.do_describe(uid)
-                builtins.print = real_print
+                choice = None
+                while not choice: 
+                    choice = input("[n]ext text, [p]rev text, [q]uit, or enter a number to jump to the nth text > ")
+                    if choice == "n":
+                        list_idx += 1
+                    elif choice == "p":
+                        list_idx -= 1
+                    elif choice == "q":
+                        list_idx = -1
+                    else:
+                        try:
+                            list_idx = int(choice)-1
+                        except:
+                            choice = None
+            builtins.print = real_print
 
     def do_errors(self, line):
         """
