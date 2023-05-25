@@ -178,7 +178,7 @@ class CLEE(cmd.Cmd):
                 self.do_describe(uid)
                 choice = None
                 while not choice: 
-                    choice = input("[n]ext text, [p]rev text, [q]uit, or enter a number to jump to the nth text > ")
+                    choice = input(f"[n]ext text, [p]rev text, [q]uit, or enter a number to jump to the nth text (1-{len(texts)}) > ")
                     if choice == "n":
                         list_idx += 1
                     elif choice == "p":
